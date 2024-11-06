@@ -11,9 +11,9 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+// struct for the nodes of the huffman tree
 type huffmanNode struct {
-	charecter rune
-	count     int
+	runecount runeCountPair
 	left      *huffmanNode
 	right     *huffmanNode
 }
@@ -23,6 +23,7 @@ type runeCountPair struct {
 	count     int
 }
 
+// counter function for counting rune probabilities
 func counter(text string) []runeCountPair {
 	resultMap := make(map[rune]int)
 	for _, char := range text {
@@ -38,6 +39,7 @@ func counter(text string) []runeCountPair {
 	return characterCounts
 }
 
+// turns a list of huffman nodes into heap
 func heapify(pairSlice []huffmanNode) []huffmanNode {
 	heap := make([]huffmanNode, len(pairSlice))
 	copy(heap, pairSlice)
@@ -47,6 +49,7 @@ func heapify(pairSlice []huffmanNode) []huffmanNode {
 	return heap
 }
 
+// ensures the heap is still a heap after pop or add operations using a bottom up approach
 func siftDown(heap []huffmanNode, start, end int) {
 	root := start
 	for {
@@ -54,10 +57,10 @@ func siftDown(heap []huffmanNode, start, end int) {
 		if child >= end {
 			return
 		}
-		if child+1 < end && heap[child+1].count < heap[child].count {
+		if child+1 < end && heap[child+1].runecount.count < heap[child].runecount.count {
 			child++
 		}
-		if heap[root].count <= heap[child].count {
+		if heap[root].runecount.count <= heap[child].runecount.count {
 			return
 		}
 		swap(heap, root, child)
@@ -69,10 +72,11 @@ func swap(slice []huffmanNode, i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
+// turns a list of runecountpairs to a huffman tree and returns the root of the tree for traversal
 func buildHuffmanTree(pairs []runeCountPair) *huffmanNode {
 	nodes := make([]huffmanNode, len(pairs))
 	for i, pair := range pairs {
-		nodes[i] = huffmanNode{charecter: pair.charecter, count: pair.count}
+		nodes[i] = huffmanNode{runecount: pair}
 	}
 
 	heap := heapify(nodes)
@@ -86,7 +90,9 @@ func buildHuffmanTree(pairs []runeCountPair) *huffmanNode {
 		siftDown(heap, 0, len(heap))
 
 		newNode := huffmanNode{
-			count: left.count + right.count,
+			runecount: runeCountPair{
+				count: left.runecount.count + right.runecount.count,
+			},
 			left:  &left,
 			right: &right,
 		}
@@ -96,12 +102,13 @@ func buildHuffmanTree(pairs []runeCountPair) *huffmanNode {
 	return &heap[0]
 }
 
+// recurssive function that generates the codes with left being a 0 and right being a 1
 func generateCodes(node *huffmanNode, prefix string, codes map[rune]string) {
 	if node == nil {
 		return
 	}
-	if node.charecter != 0 {
-		codes[node.charecter] = prefix
+	if node.runecount.charecter != 0 {
+		codes[node.runecount.charecter] = prefix
 	} else {
 		generateCodes(node.left, prefix+"0", codes)
 		generateCodes(node.right, prefix+"1", codes)
